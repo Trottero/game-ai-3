@@ -1,0 +1,193 @@
+using UnityEngine;
+using Tables;
+using System.Collections.Generic;
+using System.Linq;
+using System.Diagnostics;
+using System;
+
+public class TerrainGenerator : MonoBehaviour
+{
+    public float Scale = 32.0F;
+    private int[] case_to_numpolys;
+    private Vector3Int[,] edge_connect_list = new Vector3Int[256, 5];
+
+    private Vector3Int[,] edge_node_list = new Vector3Int[,]{
+        { new Vector3Int(0, 0, 0 ), new Vector3Int(0, 1, 0 ) }, { new Vector3Int(0, 1, 0 ), new Vector3Int(1, 1, 0 ) }, { new Vector3Int(1, 0, 0 ), new Vector3Int(1, 1, 0 ) }, { new Vector3Int(0, 0, 0 ), new Vector3Int(1, 0, 0 ) },
+        { new Vector3Int(0, 0, 1 ), new Vector3Int(0, 1, 1 ) }, { new Vector3Int(0, 1, 1 ), new Vector3Int(1, 1, 1 ) }, { new Vector3Int(1, 0, 1 ), new Vector3Int(1, 1, 1 ) }, { new Vector3Int(0, 0, 1 ), new Vector3Int(1, 0, 1 ) },
+        { new Vector3Int(0, 0, 0 ), new Vector3Int(0, 0, 1 ) }, { new Vector3Int(0, 1, 0 ), new Vector3Int(0, 1, 1 ) }, { new Vector3Int(1, 1, 0 ), new Vector3Int(1, 1, 1 ) }, { new Vector3Int(1, 0, 0 ), new Vector3Int(1, 0, 1 ) }
+    };
+
+    private Vector3Int[] vertex_offsets = new Vector3Int[]{
+        new Vector3Int(0, 0, 0), new Vector3Int(0, 1, 0), new Vector3Int(1, 1, 0), new Vector3Int(1, 0, 0),
+        new Vector3Int(0, 0, 1), new Vector3Int(0, 1, 1), new Vector3Int(1, 1, 1), new Vector3Int(1, 0, 1)
+    };
+
+    private Vector3[] meshVertices;
+    private int[] meshTriangles;
+
+    public int n_voxels = 32;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        // Load the triangle table in memory
+        for (int i = 0; i < 256; i++)
+        {
+            for (int j = 0; j < 5; j++)
+            {
+                edge_connect_list[i, j] = new Vector3Int(TriangleTable.PolyTable[i, j * 3], TriangleTable.PolyTable[i, j * 3 + 1], TriangleTable.PolyTable[i, j * 3 + 2]);
+            }
+        }
+
+        case_to_numpolys = TriangleTable.PolyCounts;
+
+        var voxel_densities = new float[n_voxels + 1, n_voxels + 1, n_voxels + 1];
+
+        // Calculate all of the densities
+        for (int x = 0; x < n_voxels + 1; x++)
+        {
+            for (int y = 0; y < n_voxels + 1; y++)
+            {
+                for (int z = 0; z < n_voxels + 1; z++)
+                {
+                    var ws = transform.position + new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
+                    // x,y,z coordinate of block accesible here.
+                    voxel_densities[x, y, z] = density(ws);
+                }
+            }
+        }
+
+        var meshVerticesList = new Vector3[32 * 32 * 32 * 5 * 3];
+        int meshVerticesCount = 0;
+
+        Stopwatch stopWatch = new Stopwatch();
+        stopWatch.Start();
+
+        // Generate one block at a time, 1 unit consists of 32 voxels.
+        for (int x = 0; x < n_voxels; x++)
+        {
+            for (int y = 0; y < n_voxels; y++)
+            {
+                for (int z = 0; z < n_voxels; z++)
+                {
+                    var ccase = 0;
+                    var exp = 1;
+                    // x,y,z coordinate of block accesible here.
+
+                    // For every vertex in the cube add it
+                    for (int v = 0; v < 8; v++)
+                    {
+                        var offset = vertex_offsets[v];
+                        ccase += to_binary(voxel_densities[x + offset.x, y + offset.y, z + offset.z]) * exp;
+                        exp *= 2;
+                    }
+
+                    var n_polys = case_to_numpolys[ccase];
+
+                    for (int p = 0; p < n_polys; p++)
+                    {
+                        // Voxel poly is a specific polygon from this voxel
+                        var voxel_poly = edge_connect_list[ccase, p];
+                        // For all edges in the polygon (3)
+                        for (int e = 0; e < 3; e++)
+                        {
+                            var edge = voxel_poly[e];
+                            // Offsets for the points
+                            var vertex_a = edge_node_list[edge, 0];
+                            var vertex_b = edge_node_list[edge, 1];
+
+                            // Retrieve densities for current point + offset
+                            var a_density = voxel_densities[x + vertex_a.x, y + vertex_a.y, z + vertex_a.z];
+                            var b_density = voxel_densities[x + vertex_b.x, y + vertex_b.y, z + vertex_b.z];
+
+                            // Subtract voxel density of A from B
+                            var abdist = Mathf.Abs(a_density - b_density);
+
+                            // Calculate distance from pt a.
+                            float unit_size = 1.0F / n_voxels;
+                            var ptdistancefromA = 1.0F / abdist * Mathf.Abs(a_density) * unit_size;
+
+                            // Position depends on the way the vertice is running.
+                            // Only one changes, we need to find that one and use that to set our unit
+                            var pt = new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
+
+                            // This can easily be done by comparing the offsets.
+                            if (vertex_a.x != vertex_b.x)
+                            {
+                                pt.x += ptdistancefromA;
+                            }
+                            else if (vertex_a.y != vertex_b.y)
+                            {
+                                pt.y += ptdistancefromA;
+                            }
+                            else if (vertex_a.z != vertex_b.z)
+                            {
+                                pt.z += ptdistancefromA;
+                            }
+                            pt += new Vector3(vertex_a.x, vertex_a.y, vertex_a.z) * unit_size;
+                            pt *= Scale;
+                            meshVerticesList[meshVerticesCount] = pt;
+                            meshVerticesCount++;
+                        }
+                    }
+                }
+            }
+        }
+        stopWatch.Stop();
+        // Get the elapsed time as a TimeSpan value.
+        TimeSpan ts = stopWatch.Elapsed;
+
+        UnityEngine.Debug.Log($"{meshVerticesCount} vertices created in {ts.TotalMilliseconds} ms");
+        meshTriangles = Enumerable.Range(0, meshVerticesCount).ToArray();
+
+        var mf = gameObject.GetComponent<MeshFilter>();
+
+        var mesh = new Mesh();
+
+        // meshVertices[0] += new Vector3(0, 1, 0);
+        mesh.vertices = meshVerticesList;
+        mesh.triangles = meshTriangles;
+        mesh.RecalculateNormals();
+        mesh.Optimize();
+        mf.mesh = mesh;
+    }
+
+    int to_binary(float number)
+    {
+        // Returns 1 if positive 0 if negative
+        if (number >= 0)
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+    void GenerateChunk()
+    {
+        // Adds a given chunk to the vertex buffer
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
+
+    float density(Vector3 point)
+    {
+        // Density function: Determines the density at a certain point
+        // Negative = empty space
+        // Positive = It is inside the shape
+
+        // Ground plane
+        // Debug.Log(d + "  " + point.y);
+        float density = -point.y;
+
+        density += (Mathf.PerlinNoise(point.x * 2, point.z * 2) * 2.0f - 1.0f);
+
+
+        return density;
+    }
+}
