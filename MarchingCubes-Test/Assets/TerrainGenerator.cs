@@ -24,6 +24,8 @@ public class TerrainGenerator : MonoBehaviour
     };
 
     private Vector3[] meshVertices;
+    private int meshVerticesCount = 0;
+
     private int[] meshTriangles;
 
     public int n_voxels = 32;
@@ -31,6 +33,10 @@ public class TerrainGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Total vertices
+        meshVertices = new Vector3[n_voxels * n_voxels * n_voxels * 3 * 3 * 9];
+
+
         // Load the triangle table in memory
         for (int i = 0; i < 256; i++)
         {
@@ -46,6 +52,12 @@ public class TerrainGenerator : MonoBehaviour
 
         CasePolyCounts = Tables.Tables.PolyCounts;
 
+        var chunk = new Vector3(0, 0, 0);
+
+
+        Stopwatch stopWatch = new Stopwatch();
+        stopWatch.Start();
+
         var voxel_densities = new float[n_voxels + 1, n_voxels + 1, n_voxels + 1];
 
         // Calculate all of the densities
@@ -55,18 +67,15 @@ public class TerrainGenerator : MonoBehaviour
             {
                 for (int z = 0; z < n_voxels + 1; z++)
                 {
-                    var ws = transform.position + new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
+                    var ws = transform.position + chunk * Scale;
+
+                    ws += new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
                     // x,y,z coordinate of block accesible here.
                     voxel_densities[x, y, z] = density(ws);
                 }
             }
         }
 
-        var meshVerticesList = new Vector3[32 * 32 * 32 * 3 * 3];
-        int meshVerticesCount = 0;
-
-        Stopwatch stopWatch = new Stopwatch();
-        stopWatch.Start();
 
         // Generate one block at a time, 1 unit consists of 32 voxels.
         for (int x = 0; x < n_voxels; x++)
@@ -141,14 +150,21 @@ public class TerrainGenerator : MonoBehaviour
                             // Scale the point with the scale given.
                             pt *= Scale;
 
+                            // Pad with position of the chunk
+
+                            // Pad with the position of the GameObject
+                            pt += transform.position;
+
                             // Store point in vertices for mesh
-                            meshVerticesList[meshVerticesCount] = pt;
+                            meshVertices[meshVerticesCount] = pt;
                             meshVerticesCount++;
                         }
                     }
                 }
             }
         }
+
+
         stopWatch.Stop();
         // Get the elapsed time as a TimeSpan value.
         TimeSpan ts = stopWatch.Elapsed;
@@ -160,8 +176,7 @@ public class TerrainGenerator : MonoBehaviour
 
         var mesh = new Mesh();
 
-        // meshVertices[0] += new Vector3(0, 1, 0);
-        mesh.vertices = meshVerticesList;
+        mesh.vertices = meshVertices;
         mesh.triangles = meshTriangles;
         mesh.RecalculateNormals();
         mesh.Optimize();
@@ -201,9 +216,20 @@ public class TerrainGenerator : MonoBehaviour
         // Debug.Log(d + "  " + point.y);
         float density = -point.y;
 
-        density += (Mathf.PerlinNoise(point.x * 2, point.z * 2) * 2.0f - 1.0f);
-
+        density += (Mathf.PerlinNoise(point.x * 2, point.z * 2) - 0.5f);
+        density += Mathf.PerlinNoise(point.x * 4, point.z * 4) * 0.25f - 0.125f;
+        density += Mathf.PerlinNoise(point.x, point.z) - 0.5f;
+        // Add intensitie for y
+        // density += perlin(point.y * 1, 0);
+        density += perlin(point.y * 3, 0) * 0.5f;
+        density += perlin(point.y * 8, 0) * 0.125f;
 
         return density;
+    }
+
+    float perlin(float x, float y)
+    {
+        // Returns perlin noise but from [-1, 1] 
+        return (Mathf.PerlinNoise(x, y) - 0.5f) * 2;
     }
 }
