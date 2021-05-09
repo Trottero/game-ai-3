@@ -8,16 +8,17 @@ using System;
 public class TerrainGenerator : MonoBehaviour
 {
     public float Scale = 32.0F;
-    private int[] case_to_numpolys;
-    private Vector3Int[,] edge_connect_list = new Vector3Int[256, 5];
+    private int[] CasePolyCounts;
+    private Vector3Int[,] CaseVoxelPolys = new Vector3Int[256, 5];
 
-    private Vector3Int[,] edge_node_list = new Vector3Int[,]{
+    private Vector3Int[,] EdgeVertices = new Vector3Int[,]{
         { new Vector3Int(0, 0, 0 ), new Vector3Int(0, 1, 0 ) }, { new Vector3Int(0, 1, 0 ), new Vector3Int(1, 1, 0 ) }, { new Vector3Int(1, 0, 0 ), new Vector3Int(1, 1, 0 ) }, { new Vector3Int(0, 0, 0 ), new Vector3Int(1, 0, 0 ) },
         { new Vector3Int(0, 0, 1 ), new Vector3Int(0, 1, 1 ) }, { new Vector3Int(0, 1, 1 ), new Vector3Int(1, 1, 1 ) }, { new Vector3Int(1, 0, 1 ), new Vector3Int(1, 1, 1 ) }, { new Vector3Int(0, 0, 1 ), new Vector3Int(1, 0, 1 ) },
         { new Vector3Int(0, 0, 0 ), new Vector3Int(0, 0, 1 ) }, { new Vector3Int(0, 1, 0 ), new Vector3Int(0, 1, 1 ) }, { new Vector3Int(1, 1, 0 ), new Vector3Int(1, 1, 1 ) }, { new Vector3Int(1, 0, 0 ), new Vector3Int(1, 0, 1 ) }
     };
 
-    private Vector3Int[] vertex_offsets = new Vector3Int[]{
+    // Used to easily loop through the vertices in the correct order (clock-wise x, y) and then again with z + 1
+    private Vector3Int[] VertexOffsets = new Vector3Int[]{
         new Vector3Int(0, 0, 0), new Vector3Int(0, 1, 0), new Vector3Int(1, 1, 0), new Vector3Int(1, 0, 0),
         new Vector3Int(0, 0, 1), new Vector3Int(0, 1, 1), new Vector3Int(1, 1, 1), new Vector3Int(1, 0, 1)
     };
@@ -35,11 +36,15 @@ public class TerrainGenerator : MonoBehaviour
         {
             for (int j = 0; j < 5; j++)
             {
-                edge_connect_list[i, j] = new Vector3Int(TriangleTable.PolyTable[i, j * 3], TriangleTable.PolyTable[i, j * 3 + 1], TriangleTable.PolyTable[i, j * 3 + 2]);
+                CaseVoxelPolys[i, j] =
+                    new Vector3Int(
+                        Tables.Tables.PolyTable[i, j * 3],
+                        Tables.Tables.PolyTable[i, j * 3 + 1],
+                        Tables.Tables.PolyTable[i, j * 3 + 2]);
             }
         }
 
-        case_to_numpolys = TriangleTable.PolyCounts;
+        CasePolyCounts = Tables.Tables.PolyCounts;
 
         var voxel_densities = new float[n_voxels + 1, n_voxels + 1, n_voxels + 1];
 
@@ -57,7 +62,7 @@ public class TerrainGenerator : MonoBehaviour
             }
         }
 
-        var meshVerticesList = new Vector3[32 * 32 * 32 * 5 * 3];
+        var meshVerticesList = new Vector3[32 * 32 * 32 * 3 * 3];
         int meshVerticesCount = 0;
 
         Stopwatch stopWatch = new Stopwatch();
@@ -70,31 +75,34 @@ public class TerrainGenerator : MonoBehaviour
             {
                 for (int z = 0; z < n_voxels; z++)
                 {
-                    var ccase = 0;
-                    var exp = 1;
-                    // x,y,z coordinate of block accesible here.
+                    var cubeCase = 0;
+                    var exponent = 1;
 
-                    // For every vertex in the cube add it
+                    // Transform densities to bits and calculate decimal
                     for (int v = 0; v < 8; v++)
                     {
-                        var offset = vertex_offsets[v];
-                        ccase += to_binary(voxel_densities[x + offset.x, y + offset.y, z + offset.z]) * exp;
-                        exp *= 2;
+                        var offset = VertexOffsets[v];
+                        cubeCase += to_binary(voxel_densities[x + offset.x, y + offset.y, z + offset.z]) * exponent;
+                        exponent *= 2;
                     }
 
-                    var n_polys = case_to_numpolys[ccase];
+                    // Get number of polys given the current case
+                    var n_polys = CasePolyCounts[cubeCase];
 
-                    for (int p = 0; p < n_polys; p++)
+                    for (int poly = 0; poly < n_polys; poly++)
                     {
-                        // Voxel poly is a specific polygon from this voxel
-                        var voxel_poly = edge_connect_list[ccase, p];
+                        // Polygon exists of a list of edge indices that it connects to
+                        var polygon = CaseVoxelPolys[cubeCase, poly];
+
                         // For all edges in the polygon (3)
                         for (int e = 0; e < 3; e++)
                         {
-                            var edge = voxel_poly[e];
-                            // Offsets for the points
-                            var vertex_a = edge_node_list[edge, 0];
-                            var vertex_b = edge_node_list[edge, 1];
+                            // Get edge index from this polygon
+                            var edge = polygon[e];
+
+                            // Gets offsets for vertices based on a given edge
+                            var vertex_a = EdgeVertices[edge, 0]; // From
+                            var vertex_b = EdgeVertices[edge, 1]; // To
 
                             // Retrieve densities for current point + offset
                             var a_density = voxel_densities[x + vertex_a.x, y + vertex_a.y, z + vertex_a.z];
@@ -105,27 +113,35 @@ public class TerrainGenerator : MonoBehaviour
 
                             // Calculate distance from pt a.
                             float unit_size = 1.0F / n_voxels;
-                            var ptdistancefromA = 1.0F / abdist * Mathf.Abs(a_density) * unit_size;
+                            var distanceFromA = 1.0F / abdist * Mathf.Abs(a_density) * unit_size;
+
+                            // Create point relative to the origin of this rendering chunk.
+                            var pt = new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
 
                             // Position depends on the way the vertice is running.
                             // Only one changes, we need to find that one and use that to set our unit
-                            var pt = new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
-
                             // This can easily be done by comparing the offsets.
                             if (vertex_a.x != vertex_b.x)
                             {
-                                pt.x += ptdistancefromA;
+                                pt.x += distanceFromA;
                             }
                             else if (vertex_a.y != vertex_b.y)
                             {
-                                pt.y += ptdistancefromA;
+                                pt.y += distanceFromA;
                             }
                             else if (vertex_a.z != vertex_b.z)
                             {
-                                pt.z += ptdistancefromA;
+                                pt.z += distanceFromA;
                             }
+
+                            // Pad the vertex with vertex_a. e.g when it is in the back it should be + (0, 0, 1) (x, y, z)
+                            // This is multiplied by unit_size to make sure it stays inside the voxel
                             pt += new Vector3(vertex_a.x, vertex_a.y, vertex_a.z) * unit_size;
+
+                            // Scale the point with the scale given.
                             pt *= Scale;
+
+                            // Store point in vertices for mesh
                             meshVerticesList[meshVerticesCount] = pt;
                             meshVerticesCount++;
                         }
