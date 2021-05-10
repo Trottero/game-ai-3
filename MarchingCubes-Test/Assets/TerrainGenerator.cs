@@ -7,7 +7,48 @@ using System;
 
 public class TerrainGenerator : MonoBehaviour
 {
+
+
+
+    [Header("General")]
     public float Scale = 32.0F;
+    public int n_voxels = 32;
+    public int RenderDistance = 3;
+    public int Height = 3;
+
+    public float SeabedDensity = 0.0f;
+    public float UndergroundDensity = 0.0f;
+
+    [Header("Horizontal noise")]
+    public float HorizontalVariance1 = 4f;
+    public float HorizontalAmplitude1 = 0.125f;
+    public float HorizontalVariance2 = 2f;
+    public float HorizontalAmplitude2 = 0.5f;
+    public float HorizontalVariance3 = 0f;
+    public float HorizontalAmplitude3 = 0f;
+    public float HorizontalVariance4 = 0f;
+    public float HorizontalAmplitude4 = 0f;
+
+    [Header("Vertical noise")]
+    public float VerticalVariance1 = 4f;
+    public float VerticalAmplitude1 = 0.5f;
+    public float VerticalVariance2 = 2f;
+    public float VerticalAmplitude2 = 1f;
+    public float VerticalVariance3 = 1f;
+    public float VerticalAmplitude3 = 2f;
+    public float VerticalVariance4 = 0.5f;
+    public float VerticalAmplitude4 = 4f;
+
+
+    [Header("Warping to worldspace")]
+    public float WarpVariance = 0.05f;
+    public float WarpAmplitude = 8f;
+
+    [Header("Ceiling")]
+    public float CeilingLimit = 1.8f;
+    public float CeilingDensity = 0.1f;
+
+
     private int[] CasePolyCounts;
     private Vector3Int[,] CaseVoxelPolys = new Vector3Int[256, 5];
 
@@ -28,15 +69,12 @@ public class TerrainGenerator : MonoBehaviour
 
     private int[] meshTriangles;
 
-    public int n_voxels = 32;
+    private bool ready = false;
+
 
     // Start is called before the first frame update
     void Start()
     {
-        // Total vertices
-        meshVertices = new Vector3[n_voxels * n_voxels * n_voxels * 3 * 3 * 9];
-
-
         // Load the triangle table in memory
         for (int i = 0; i < 256; i++)
         {
@@ -51,16 +89,26 @@ public class TerrainGenerator : MonoBehaviour
         }
 
         CasePolyCounts = Tables.Tables.PolyCounts;
+        ready = true;
+        generateTerrain();
+    }
+
+    private void generateTerrain()
+    {
+        // Init vertex trackers
+        meshVerticesCount = 0;
+        // Total vertices
+        meshVertices = new Vector3[n_voxels * n_voxels * n_voxels * 5 * 3 * RenderDistance * RenderDistance * Height];
 
         Stopwatch stopWatch = new Stopwatch();
         stopWatch.Start();
 
         // For each chunk in the to render chunks, render it.
-        for (int x = 0; x < 3; x++)
+        for (int x = 0; x < RenderDistance; x++)
         {
-            for (int y = 0; y < 3; y++)
+            for (int y = 0; y < Height; y++)
             {
-                for (int z = 0; z < 3; z++)
+                for (int z = 0; z < RenderDistance; z++)
                 {
                     generateChunk(new Vector3(x, y, z));
                 }
@@ -207,18 +255,19 @@ public class TerrainGenerator : MonoBehaviour
         return 0;
     }
 
-    void GenerateChunk()
-    {
-        // Adds a given chunk to the vertex buffer
-
-    }
-
     // Update is called once per frame
     void Update()
     {
 
     }
 
+    void OnValidate()
+    {
+        if (ready)
+        {
+            generateTerrain();
+        }
+    }
 
     float density(Vector3 point)
     {
@@ -228,19 +277,54 @@ public class TerrainGenerator : MonoBehaviour
 
         // Ground plane
         // Debug.Log(d + "  " + point.y);
-        float density = -point.y;
+
+        var original = point;
+
+        float density = 0.0f;
+
+        if (point.y > 1.5)
+        {
+            density += SeabedDensity;
+        }
+        else
+        {
+            density += UndergroundDensity;
+        }
+
+        // Warping
+        var warpx = perlin(point.x, 0, WarpVariance);
+        var warpy = perlin(point.y, 0, WarpVariance);
+        var warpz = perlin(point.z, 0, WarpVariance);
+
+        point += new Vector3(warpx, warpy, warpz) * WarpAmplitude;
 
         // density += perlin(point.x, point.z, 0.004f) * 8;
 
-        density += perlin(point.x, point.z, 4) * 0.125f;
-        density += perlin(point.x, point.z, 2) * 0.5f;
-        density += perlin(point.x, point.z) * 2;
+        // density += perlin(point.x, point.z, 4) * 0.125f;
+        // density += perlin(point.x, point.z, 2) * 0.5f;
+        // density += perlin(point.x, point.z) * 2;
 
 
-        density += perlin(point.y, 0, 4) * 0.5f;
-        density += perlin(point.y, 0, 2);
-        density += perlin(point.y, 0) * 2;
-        density += perlin(point.y, 0, 0.5f) * 4;
+        // density += perlin(point.y, 0, 4) * 0.5f;
+        // density += perlin(point.y, 0, 2);
+        // density += perlin(point.y, 0) * 2;
+        // density += perlin(point.y, 0, 0.5f) * 4;
+
+
+        density += perlin(point.x, point.z, HorizontalVariance1) * HorizontalAmplitude1;
+        density += perlin(point.x, point.z, HorizontalVariance2) * HorizontalAmplitude2;
+        density += perlin(point.x, point.z, HorizontalVariance3) * HorizontalAmplitude3;
+        density += perlin(point.x, point.z, HorizontalVariance4) * HorizontalAmplitude4;
+
+        density += perlin(point.y, 0, VerticalVariance1) * VerticalAmplitude1;
+        density += perlin(point.y, 0, VerticalVariance2) * VerticalAmplitude2;
+        density += perlin(point.y, 0, VerticalVariance3) * VerticalAmplitude3;
+        density += perlin(point.y, 0, VerticalVariance4) * VerticalAmplitude4;
+
+        if (point.y > CeilingLimit)
+        {
+            density -= CeilingDensity;
+        }
 
         // Canyon like effect
         // density += perlin(point.x, point.z);
@@ -260,23 +344,5 @@ public class TerrainGenerator : MonoBehaviour
     {
         // Returns perlin noise but from [-1, 1] 
         return (Mathf.PerlinNoise(x * variance, y * variance) - 0.5f) * 2;
-    }
-
-    float perlin3D(float x, float y, float z, float variance = 1f)
-    {
-        // Returns perlin noise but from [-1, 1] 
-        return (PerlinNoise3D(x * variance, y * variance, z * variance) - 0.5f) * 2;
-    }
-
-    public float PerlinNoise3D(float x, float y, float z)
-    {
-        float xy = Mathf.PerlinNoise(x, y);
-        float xz = Mathf.PerlinNoise(x, z);
-        float yz = Mathf.PerlinNoise(y, z);
-        float yx = Mathf.PerlinNoise(y, x);
-        float zx = Mathf.PerlinNoise(z, x);
-        float zy = Mathf.PerlinNoise(z, y);
-
-        return (xy + xz + yz + yx + zx + zy) / 6;
     }
 }
