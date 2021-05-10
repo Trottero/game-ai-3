@@ -52,12 +52,42 @@ public class TerrainGenerator : MonoBehaviour
 
         CasePolyCounts = Tables.Tables.PolyCounts;
 
-        var chunk = new Vector3(0, 0, 0);
-
-
         Stopwatch stopWatch = new Stopwatch();
         stopWatch.Start();
 
+        // For each chunk in the to render chunks, render it.
+        for (int x = 0; x < 3; x++)
+        {
+            for (int y = 0; y < 3; y++)
+            {
+                for (int z = 0; z < 3; z++)
+                {
+                    generateChunk(new Vector3(x, y, z));
+                }
+            }
+        }
+
+        stopWatch.Stop();
+        // Get the elapsed time as a TimeSpan value.
+        TimeSpan ts = stopWatch.Elapsed;
+
+        UnityEngine.Debug.Log($"{meshVerticesCount} vertices created in {ts.TotalMilliseconds} ms");
+        meshTriangles = Enumerable.Range(0, meshVerticesCount).ToArray();
+
+        var mf = gameObject.GetComponent<MeshFilter>();
+
+        var mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
+        mesh.vertices = meshVertices;
+        mesh.triangles = meshTriangles;
+        mesh.RecalculateNormals();
+        mesh.Optimize();
+        mf.mesh = mesh;
+    }
+
+    private void generateChunk(Vector3 chunk)
+    {
         var voxel_densities = new float[n_voxels + 1, n_voxels + 1, n_voxels + 1];
 
         // Calculate all of the densities
@@ -67,7 +97,7 @@ public class TerrainGenerator : MonoBehaviour
             {
                 for (int z = 0; z < n_voxels + 1; z++)
                 {
-                    var ws = transform.position + chunk * Scale;
+                    var ws = transform.position + chunk;
 
                     ws += new Vector3((float)x / n_voxels, (float)y / n_voxels, (float)z / n_voxels);
                     // x,y,z coordinate of block accesible here.
@@ -147,6 +177,8 @@ public class TerrainGenerator : MonoBehaviour
                             // This is multiplied by unit_size to make sure it stays inside the voxel
                             pt += new Vector3(vertex_a.x, vertex_a.y, vertex_a.z) * unit_size;
 
+                            pt += chunk;
+
                             // Scale the point with the scale given.
                             pt *= Scale;
 
@@ -163,24 +195,6 @@ public class TerrainGenerator : MonoBehaviour
                 }
             }
         }
-
-
-        stopWatch.Stop();
-        // Get the elapsed time as a TimeSpan value.
-        TimeSpan ts = stopWatch.Elapsed;
-
-        UnityEngine.Debug.Log($"{meshVerticesCount} vertices created in {ts.TotalMilliseconds} ms");
-        meshTriangles = Enumerable.Range(0, meshVerticesCount).ToArray();
-
-        var mf = gameObject.GetComponent<MeshFilter>();
-
-        var mesh = new Mesh();
-
-        mesh.vertices = meshVertices;
-        mesh.triangles = meshTriangles;
-        mesh.RecalculateNormals();
-        mesh.Optimize();
-        mf.mesh = mesh;
     }
 
     int to_binary(float number)
@@ -216,20 +230,53 @@ public class TerrainGenerator : MonoBehaviour
         // Debug.Log(d + "  " + point.y);
         float density = -point.y;
 
-        density += (Mathf.PerlinNoise(point.x * 2, point.z * 2) - 0.5f);
-        density += Mathf.PerlinNoise(point.x * 4, point.z * 4) * 0.25f - 0.125f;
-        density += Mathf.PerlinNoise(point.x, point.z) - 0.5f;
-        // Add intensitie for y
-        // density += perlin(point.y * 1, 0);
-        density += perlin(point.y * 3, 0) * 0.5f;
-        density += perlin(point.y * 8, 0) * 0.125f;
+        // density += perlin(point.x, point.z, 0.004f) * 8;
+
+        density += perlin(point.x, point.z, 4) * 0.125f;
+        density += perlin(point.x, point.z, 2) * 0.5f;
+        density += perlin(point.x, point.z) * 2;
+
+
+        density += perlin(point.y, 0, 4) * 0.5f;
+        density += perlin(point.y, 0, 2);
+        density += perlin(point.y, 0) * 2;
+        density += perlin(point.y, 0, 0.5f) * 4;
+
+        // Canyon like effect
+        // density += perlin(point.x, point.z);
+        // density += perlin(point.x, point.z, 2) * 0.5f;
+        // density += perlin(point.x, point.z, 4) * 0.125f;
+
+        // // Add intensity for y
+        // density += perlin(point.y, 0, 3) * 0.5f;
+        // density += perlin(point.y, 0, 8) * 0.125f;
+
+        // density += perlin3D(point.x, point.y, point.z, 6);
 
         return density;
     }
 
-    float perlin(float x, float y)
+    float perlin(float x, float y, float variance = 1f)
     {
         // Returns perlin noise but from [-1, 1] 
-        return (Mathf.PerlinNoise(x, y) - 0.5f) * 2;
+        return (Mathf.PerlinNoise(x * variance, y * variance) - 0.5f) * 2;
+    }
+
+    float perlin3D(float x, float y, float z, float variance = 1f)
+    {
+        // Returns perlin noise but from [-1, 1] 
+        return (PerlinNoise3D(x * variance, y * variance, z * variance) - 0.5f) * 2;
+    }
+
+    public float PerlinNoise3D(float x, float y, float z)
+    {
+        float xy = Mathf.PerlinNoise(x, y);
+        float xz = Mathf.PerlinNoise(x, z);
+        float yz = Mathf.PerlinNoise(y, z);
+        float yx = Mathf.PerlinNoise(y, x);
+        float zx = Mathf.PerlinNoise(z, x);
+        float zy = Mathf.PerlinNoise(z, y);
+
+        return (xy + xz + yz + yx + zx + zy) / 6;
     }
 }

@@ -204,7 +204,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Scale: 32
-  n_voxels: 32
+  n_voxels: 16
 --- !u!4 &107403093
 Transform:
   m_ObjectHideFlags: 0
