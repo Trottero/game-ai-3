@@ -205,6 +205,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Scale: 32
   n_voxels: 16
+  RenderDistance: 3
+  Height: 3
+  SeabedDensity: 0
+  UndergroundDensity: 0
+  HorizontalVariance1: 4
+  HorizontalAmplitude1: 0.125
+  HorizontalVariance2: 2
+  HorizontalAmplitude2: 0.5
+  HorizontalVariance3: 0
+  HorizontalAmplitude3: 0
+  HorizontalVariance4: 0
+  HorizontalAmplitude4: 0
+  VerticalVariance1: 1
+  VerticalAmplitude1: 0.5
+  VerticalVariance2: 4
+  VerticalAmplitude2: 0.125
+  VerticalVariance3: 0
+  VerticalAmplitude3: 0
+  VerticalVariance4: 0
+  VerticalAmplitude4: 0
+  WarpVariance: 0.05
+  WarpAmplitude: 0
+  CeilingLimit: 2.4
+  CeilingDensity: 0.5
 --- !u!4 &107403093
 Transform:
   m_ObjectHideFlags: 0
