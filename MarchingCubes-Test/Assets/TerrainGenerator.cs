@@ -16,8 +16,10 @@ public class TerrainGenerator : MonoBehaviour
     public int RenderDistance = 3;
     public int Height = 3;
 
-    public float SeabedDensity = 0.0f;
-    public float UndergroundDensity = 0.0f;
+
+    [Header("Noise weights")]
+    public float HorizontalWeight = 1f;
+    public float VerticalWeight = 1f;
 
     [Header("Horizontal noise")]
     public float HorizontalVariance1 = 4f;
@@ -44,9 +46,15 @@ public class TerrainGenerator : MonoBehaviour
     public float WarpVariance = 0.05f;
     public float WarpAmplitude = 8f;
 
-    [Header("Ceiling")]
+    [Header("Bottom / Ceiling")]
     public float CeilingLimit = 1.8f;
     public float CeilingDensity = 0.1f;
+    public float BottomLimit = -0.4f;
+    public float BottomDensity = 0.1f;
+
+    [Header("Density")]
+    public float SeabedDensity = 0.0f;
+    public float UndergroundDensity = 0.0f;
 
 
     private int[] CasePolyCounts;
@@ -298,44 +306,29 @@ public class TerrainGenerator : MonoBehaviour
 
         point += new Vector3(warpx, warpy, warpz) * WarpAmplitude;
 
-        // density += perlin(point.x, point.z, 0.004f) * 8;
+        var horizontalDensity = perlin(point.x, point.z, HorizontalVariance1) * HorizontalAmplitude1;
+        horizontalDensity += perlin(point.x, point.z, HorizontalVariance2) * HorizontalAmplitude2;
+        horizontalDensity += perlin(point.x, point.z, HorizontalVariance3) * HorizontalAmplitude3;
+        horizontalDensity += perlin(point.x, point.z, HorizontalVariance4) * HorizontalAmplitude4;
 
-        // density += perlin(point.x, point.z, 4) * 0.125f;
-        // density += perlin(point.x, point.z, 2) * 0.5f;
-        // density += perlin(point.x, point.z) * 2;
+        density += horizontalDensity * HorizontalWeight;
 
+        var verticalDensity = perlin(point.y, 0, VerticalVariance1) * VerticalAmplitude1;
+        verticalDensity += perlin(point.y, 0, VerticalVariance2) * VerticalAmplitude2;
+        verticalDensity += perlin(point.y, 0, VerticalVariance3) * VerticalAmplitude3;
+        verticalDensity += perlin(point.y, 0, VerticalVariance4) * VerticalAmplitude4;
 
-        // density += perlin(point.y, 0, 4) * 0.5f;
-        // density += perlin(point.y, 0, 2);
-        // density += perlin(point.y, 0) * 2;
-        // density += perlin(point.y, 0, 0.5f) * 4;
-
-
-        density += perlin(point.x, point.z, HorizontalVariance1) * HorizontalAmplitude1;
-        density += perlin(point.x, point.z, HorizontalVariance2) * HorizontalAmplitude2;
-        density += perlin(point.x, point.z, HorizontalVariance3) * HorizontalAmplitude3;
-        density += perlin(point.x, point.z, HorizontalVariance4) * HorizontalAmplitude4;
-
-        density += perlin(point.y, 0, VerticalVariance1) * VerticalAmplitude1;
-        density += perlin(point.y, 0, VerticalVariance2) * VerticalAmplitude2;
-        density += perlin(point.y, 0, VerticalVariance3) * VerticalAmplitude3;
-        density += perlin(point.y, 0, VerticalVariance4) * VerticalAmplitude4;
+        density += verticalDensity * VerticalWeight;
 
         if (point.y > CeilingLimit)
         {
-            density -= CeilingDensity;
+            density -= Math.Abs(point.y - CeilingLimit) * CeilingDensity;
         }
 
-        // Canyon like effect
-        // density += perlin(point.x, point.z);
-        // density += perlin(point.x, point.z, 2) * 0.5f;
-        // density += perlin(point.x, point.z, 4) * 0.125f;
-
-        // // Add intensity for y
-        // density += perlin(point.y, 0, 3) * 0.5f;
-        // density += perlin(point.y, 0, 8) * 0.125f;
-
-        // density += perlin3D(point.x, point.y, point.z, 6);
+        if (point.y < BottomLimit)
+        {
+            density += Math.Abs(point.y - BottomLimit) * BottomDensity; // Linear equation
+        }
 
         return density;
     }

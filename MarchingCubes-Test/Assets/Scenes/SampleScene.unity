@@ -207,8 +207,8 @@ MonoBehaviour:
   n_voxels: 16
   RenderDistance: 3
   Height: 3
-  SeabedDensity: 0
-  UndergroundDensity: 0
+  HorizontalWeight: 1
+  VerticalWeight: 1
   HorizontalVariance1: 4
   HorizontalAmplitude1: 0.125
   HorizontalVariance2: 2
@@ -228,7 +228,11 @@ MonoBehaviour:
   WarpVariance: 0.05
   WarpAmplitude: 0
   CeilingLimit: 2.4
-  CeilingDensity: 0.5
+  CeilingDensity: 4
+  BottomLimit: -0.25
+  BottomDensity: 2
+  SeabedDensity: 0
+  UndergroundDensity: 0
 --- !u!4 &107403093
 Transform:
   m_ObjectHideFlags: 0
@@ -412,8 +416,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.25696534, y: 0.3599848, z: -0.10378004, w: 0.8908476}
-  m_LocalPosition: {x: -12.661822, y: 40.44595, z: -9.632323}
+  m_LocalRotation: {x: -0.12368094, y: -0.8396609, z: 0.22184215, w: -0.4800611}
+  m_LocalPosition: {x: -10.753998, y: 106.18512, z: 79.43213}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
