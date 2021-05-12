@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
 using System;
+using Utilities;
 
 public class TerrainGenerator : MonoBehaviour
 {
@@ -103,8 +104,18 @@ public class TerrainGenerator : MonoBehaviour
         generateTerrain();
     }
 
+
     private void generateTerrain()
     {
+        // Determine chunks to render given the players position.
+        // Only chunks within the render distance of the player will be rendered.
+
+        // Normalise to int structure, this way we can get proper indices going.
+        var normalizedPosition = (transform.position / Scale).Round();
+        var normalizedLastRenderPass = (lastRenderPass / Scale).Round();
+
+        var diff = normalizedLastRenderPass - normalizedPosition;
+
         // Init vertex trackers
         meshVerticesCount = 0;
         // Total vertices
@@ -116,13 +127,11 @@ public class TerrainGenerator : MonoBehaviour
         // For each chunk in the to render chunks, render it.
         for (int x = 0; x < RenderDistance; x++)
         {
-            for (int y = 0; y < Height; y++)
+            for (int z = 0; z < RenderDistance; z++)
             {
-                for (int z = 0; z < RenderDistance; z++)
-                {
-                    generateChunk(new Vector3(x, y, z));
-                }
+                generateVerticalChunk(new Vector2(x, z));
             }
+
         }
 
         stopWatch.Stop();
@@ -142,6 +151,17 @@ public class TerrainGenerator : MonoBehaviour
         mesh.RecalculateNormals();
         mesh.Optimize();
         mf.mesh = mesh;
+
+        var collider = GetComponent<MeshCollider>();
+        collider.sharedMesh = mesh;
+    }
+
+    private void generateVerticalChunk(Vector2 chunk)
+    {
+        for (int i = 0; i < Height; i++)
+        {
+            generateChunk(new Vector3(chunk.x, i, chunk.y));
+        }
     }
 
     private void generateChunk(Vector3 chunk)
@@ -265,10 +285,18 @@ public class TerrainGenerator : MonoBehaviour
         return 0;
     }
 
+    private Vector3 lastRenderPass = new Vector3();
     // Update is called once per frame
     void Update()
     {
-
+        // First determine whether an update was even neccesary
+        if (Vector3.Distance(lastRenderPass, new Vector3(transform.position.x, 0, transform.position.z) / Scale) > 1.0f)
+        {
+            // We need to update
+            lastRenderPass = transform.position;
+            lastRenderPass.y = 0;
+            generateTerrain();
+        }
     }
 
     void OnValidate()
