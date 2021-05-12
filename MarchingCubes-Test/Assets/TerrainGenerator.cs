@@ -53,7 +53,9 @@ public class TerrainGenerator : MonoBehaviour
     public float BottomDensity = 0.1f;
 
     [Header("Density")]
-    public float SeabedDensity = 0.0f;
+    public float SeabedVariance = 0.5f;
+    public float SeabedDensity = 0.2f;
+    public float UndergroundVariance = 0.005f;
     public float UndergroundDensity = 0.0f;
 
 
@@ -292,11 +294,11 @@ public class TerrainGenerator : MonoBehaviour
 
         if (point.y > 1.5)
         {
-            density += SeabedDensity;
+            density += perlin(point.x, point.z, SeabedVariance) * SeabedDensity;
         }
         else
         {
-            density += UndergroundDensity;
+            density += perlin(point.x, point.z, UndergroundVariance) * UndergroundDensity;
         }
 
         // Warping
