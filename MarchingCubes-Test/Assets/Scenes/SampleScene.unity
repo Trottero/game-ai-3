@@ -161,7 +161,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7aa516626df7eed4e91936e175b7504c, type: 2}
+  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -231,7 +231,9 @@ MonoBehaviour:
   CeilingDensity: 4
   BottomLimit: -0.25
   BottomDensity: 2
-  SeabedDensity: 0
+  SeabedVariance: 0.5
+  SeabedDensity: 0.2
+  UndergroundVariance: 0.005
   UndergroundDensity: 0
 --- !u!4 &107403093
 Transform:
