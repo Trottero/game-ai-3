@@ -11,7 +11,10 @@ public class ThirdPersonCharacterController : MonoBehaviour
     public float lookSpeed = 2.0f;
     public float lookXLimit = 60.0f;
 
-    public float animationSpeed = 1.0f;
+    public float movingAnimationSpeed = 1.0f;
+    public float boostAnimationMultiplier = 1.5f;
+
+    public float boostSpeedMultiplier = 1.5f;
 
     CharacterController characterController;
     Animator animator;
@@ -20,6 +23,9 @@ public class ThirdPersonCharacterController : MonoBehaviour
 
     [HideInInspector]
     public bool canMove = true;
+
+    private bool boosting = false;
+
 
     void Start()
     {
@@ -31,21 +37,40 @@ public class ThirdPersonCharacterController : MonoBehaviour
 
     void Update()
     {
-        // We are grounded, so recalculate move direction based on axes
-        Vector3 forward = transform.TransformDirection(Vector3.forward);
-        Vector3 right = transform.TransformDirection(Vector3.right);
-        float curSpeedX = canMove ? speed * Input.GetAxis("Vertical") : 0;
-        float curSpeedY = canMove ? speed * Input.GetAxis("Horizontal") : 0;
-        moveDirection = (forward * curSpeedX) + (right * curSpeedY);
+
+
+        // Wait untill the key has been up with boost down.
+        if (boosting && Input.GetKeyUp(KeyCode.LeftShift))
+        {
+            boosting = false;
+        }
 
         if (Input.GetButton("Vertical"))
         {
-            animator.speed = animationSpeed;
+            if (boosting || Input.GetKeyDown(KeyCode.LeftShift))
+            {
+                boosting = true;
+                animator.speed = movingAnimationSpeed * boostAnimationMultiplier;
+            }
+            else
+            {
+                animator.speed = movingAnimationSpeed;
+            }
         }
         else
         {
             animator.speed = 1.0f;
         }
+
+
+        Vector3 forward = transform.TransformDirection(Vector3.forward);
+        Vector3 right = transform.TransformDirection(Vector3.right);
+        float curSpeedX = canMove ? speed * Input.GetAxis("Vertical") : 0;
+        curSpeedX = boosting ? curSpeedX * boostSpeedMultiplier : curSpeedX;
+
+        float curSpeedY = canMove ? speed * Input.GetAxis("Horizontal") : 0;
+
+        moveDirection = (forward * curSpeedX) + (right * curSpeedY);
 
         // Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
         // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
