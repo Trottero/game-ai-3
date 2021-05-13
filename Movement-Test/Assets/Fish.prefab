@@ -45,20 +45,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Speed: 5
-  turningSpeed: 2.5
-  perceptionRange: 10
-  isHighlighted: 0
+  TurningSpeed: 2.5
+  ShowDebugGizmos: 0
   CohesionFactor: 1
   CohesionRange: 10
   SeperationFactor: 5
   SeperationRange: 3
   AlignmentFactor: 3
   AlignmentRange: 10
+  TrackTarget: 0
   TargetFactor: 1
+  TargetRange: 5
+  Target: {fileID: 0}
   EvasionFactor: 100
   EvasionRange: 5
-  EvasionRaySamples: 25
-  TrackTarget: 0
+  EvasionRaySamples: 50
+  EnvironmentCollider: {fileID: 0}
 --- !u!1 &7466221061237892769
 GameObject:
   m_ObjectHideFlags: 0

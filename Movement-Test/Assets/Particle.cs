@@ -108,10 +108,10 @@ public class Particle : MonoBehaviour
         if (ShowDebugGizmos)
         {
             // Draw a line to all of its neighbours
-            foreach (var item in neighbours)
-            {
-                Debug.DrawLine(transform.position, item.transform.position, Color.green, 0.0F);
-            }
+            // foreach (var item in neighbours)
+            // {
+            //     Debug.DrawLine(transform.position, item.transform.position, Color.green, 0.0F);
+            // }
             Gizmos.DrawWireSphere(transform.position, new float[] { CohesionRange, SeperationRange, AlignmentRange, EvasionRange }.Max());
         }
     }
@@ -222,18 +222,30 @@ public class Particle : MonoBehaviour
 
         var resultvec = new Vector3();
         var n_collisions = 0;
-        var min_distance = EvasionRange;
+        var minDistance = EvasionRange;
 
         // Calculate the sum of the distances between the particle and the collider
         for (int i = 0; i < EvasionRaySamples; i++)
         {
+
             // Cast ray from fish to point and check if it intersects with an object.
             var ray = new Ray(transform.position, spherePoints[i]);
             if (EnvironmentCollider.Raycast(ray, out var hitinfo, EvasionRange))
             {
+                // Check if this sphere is in this angle
+                if (ShowDebugGizmos)
+                {
+                    Debug.Log(Vector3.Angle(transform.forward, spherePoints[i]));
+                }
+
                 // Add hitinfo position relative to position
                 resultvec += hitinfo.point - transform.position;
                 n_collisions++;
+
+                if (hitinfo.distance < minDistance)
+                {
+                    minDistance = hitinfo.distance;
+                }
 
                 if (ShowDebugGizmos)
                 {
@@ -247,12 +259,15 @@ public class Particle : MonoBehaviour
             return Vector3.zero;
         }
 
+
         // Take average
         resultvec /= (float)n_collisions;
 
         // Calculate the inverse vector, just like in seperation.
         resultvec = resultvec * -1;
 
+        // Adjust the speed of the fish to avoid collision
+        variableSpeed = RecalculateSpeed(minDistance, resultvec);
         if (ShowDebugGizmos)
         {
             Debug.DrawLine(transform.position, transform.position + resultvec, Color.cyan);
@@ -272,5 +287,25 @@ public class Particle : MonoBehaviour
             spherePoints[i].y = (float)Math.Sin(theta) * (float)Math.Sin(phi);
             spherePoints[i].z = (float)Math.Cos(phi);
         }
+    }
+
+    // Recalculates the speed of the fish based on the chance of it colliding with the environment.
+    private float RecalculateSpeed(float distance, Vector3 optimalAngle)
+    {
+        var minDistanceFromWall = 1.0f;
+
+        // compute gradient
+        var diff = EvasionRange - minDistanceFromWall;
+        var gradient = Speed / diff;
+        var adjustedSpeed = distance * gradient - gradient;
+        adjustedSpeed = Mathf.Clamp(adjustedSpeed, 0, Speed);
+
+        var angle = Vector3.Angle(transform.forward, optimalAngle);
+        if (angle < 45.0f && distance < 1.5f)
+        {
+            var scaledSpeed = Speed * 0.1f;
+            adjustedSpeed = scaledSpeed - angle * scaledSpeed / 45.0f;
+        }
+        return adjustedSpeed;
     }
 }
