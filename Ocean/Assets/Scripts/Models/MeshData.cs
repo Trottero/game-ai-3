@@ -1,46 +1,38 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 namespace Models
 {
     public class MeshData
     {
-        public Vector3[] Vertices { get; set; }
-        public int[] Triangles { get; set; }
-        public Vector2[] UVs { get; set; }
+        public Vector3[] Vertices { get; private set; }
 
-        private int _triangleCurrIndex;
+        private int _vertexCounter = 0;
 
-        public MeshData(int meshWidth, int meshHeight, bool useDiscreteVertices)
+        public MeshData(int numberOfVoxels, int VerticalRenderDistance)
         {
-            if (useDiscreteVertices)
-            {
-                Vertices = new Vector3[(meshWidth - 1) * (meshHeight - 1) * 6];
-                UVs = new Vector2[(meshWidth - 1) * (meshHeight - 1) * 6];
-            }
-            else
-            {
-                Vertices = new Vector3[meshWidth * meshHeight];
-                UVs = new Vector2[meshWidth * meshHeight];
-            }
-
-            Triangles = new int[(meshWidth - 1) * (meshHeight - 1) * 6];
-
-            _triangleCurrIndex = 0;
+            // Maximal number of vertices in a single chunk
+            Vertices = new Vector3[numberOfVoxels * numberOfVoxels * numberOfVoxels * 5 * 3 * VerticalRenderDistance];
         }
 
         public Mesh CreateMesh()
         {
-            var mesh = new Mesh {vertices = Vertices, triangles = Triangles, uv = UVs};
+            // Mesh assumes that all vertices are in order
+            var meshTriangles = Enumerable.Range(0, _vertexCounter).ToArray();
+
+            // Construct mesh
+            var mesh = new Mesh { vertices = Vertices, triangles = meshTriangles };
+
             mesh.RecalculateNormals();
+            mesh.Optimize();
+
             return mesh;
         }
 
-        public void AddTriangle(int a, int b, int c)
+        public void AddVertex(Vector3 vertex)
         {
-            Triangles[_triangleCurrIndex] = a;
-            Triangles[_triangleCurrIndex + 1] = b;
-            Triangles[_triangleCurrIndex + 2] = c;
-            _triangleCurrIndex += 3;
+            Vertices[_vertexCounter] = vertex;
+            _vertexCounter++;
         }
     }
 }

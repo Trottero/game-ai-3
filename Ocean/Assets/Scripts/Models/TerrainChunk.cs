@@ -6,7 +6,7 @@ using UnityEngine;
 public class TerrainChunk
 {
     public Vector2 Position { get; private set; }
-    private GameObject _meshObject;
+    public GameObject MeshObject { get; private set; }
     private Bounds _bounds;
     private TerrainGenerator _generator;
 
@@ -22,20 +22,18 @@ public class TerrainChunk
     public TerrainChunk(TerrainGenerator generator, Vector2 coord, float scale, Transform parent, Material material)
     {
         _generator = generator;
-        Position = coord * scale;
-        _bounds = new Bounds(Position, Vector2.one * scale);
+        Position = coord;
+        _bounds = new Bounds(Position * scale, Vector2.one * scale);
         Vector3 position3d = new Vector3(Position.x, 0, Position.y);
 
-        _meshObject = new GameObject($"Terrain Chunk ({coord.x}, {coord.y})");
-        _meshRenderer = _meshObject.AddComponent<MeshRenderer>();
-        _meshFilter = _meshObject.AddComponent<MeshFilter>();
-        _meshCollider = _meshObject.AddComponent<MeshCollider>();
+        MeshObject = new GameObject($"Terrain Chunk ({coord.x}, {coord.y})");
+        _meshRenderer = MeshObject.AddComponent<MeshRenderer>();
+        _meshFilter = MeshObject.AddComponent<MeshFilter>();
+        _meshCollider = MeshObject.AddComponent<MeshCollider>();
         _meshRenderer.material = material;
 
-        _meshObject.transform.position = position3d;
-        _meshObject.transform.parent = parent;
-
-        SetVisible(false);
+        MeshObject.transform.position = position3d;
+        MeshObject.transform.parent = parent;
 
         _generator.RequestMeshData(Position, OnMeshReceived);
     }
@@ -56,24 +54,18 @@ public class TerrainChunk
     {
         if (!_meshDataReceived) return;
 
-        float viewerToEdge = Mathf.Sqrt(_bounds.SqrDistance(InfiniteTerrain.ViewerPosition));
-        bool isVisible = viewerToEdge <= InfiniteTerrain.MaxViewingDistance;
+        var isVisible = IsVisible();
 
         if (isVisible)
         {
             InfiniteTerrain.VisibleChunks.Add(this);
         }
-
-        SetVisible(isVisible);
-    }
-
-    public void SetVisible(bool visible)
-    {
-        _meshObject.SetActive(visible);
     }
 
     public bool IsVisible()
     {
-        return _meshObject.activeSelf;
+        float viewerToEdge = Mathf.Sqrt(_bounds.SqrDistance(InfiniteTerrain.ViewerPosition));
+        bool isVisible = viewerToEdge <= InfiniteTerrain.MaxViewingDistance;
+        return isVisible;
     }
 }

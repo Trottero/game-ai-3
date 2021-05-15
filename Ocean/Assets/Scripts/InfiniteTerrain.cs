@@ -10,8 +10,8 @@ public class InfiniteTerrain : MonoBehaviour
     private const float SquaredViewerMoveThresholdForChunkUpdate =
         ViewerMoveThresholdForChunkUpdate * ViewerMoveThresholdForChunkUpdate;
 
-    public static float MaxViewingDistance;
-    public static float Scale;
+    public static float MaxViewingDistance = 100f;
+    public static float Scale = 32.0f;
     public static Vector2 ViewerPosition;
 
     public Transform Viewer;
@@ -31,7 +31,7 @@ public class InfiniteTerrain : MonoBehaviour
 
         _generator = FindObjectOfType<TerrainGenerator>();
         // _chunkSize = TerrainGenerator.MapChunkSize - 1;
-        // _numberOfChunksVisible = Mathf.RoundToInt(MaxViewingDistance / _chunkSize);
+        _numberOfChunksVisible = Mathf.RoundToInt(MaxViewingDistance / Scale);
 
         UpdateVisibleChunks();
     }
@@ -51,11 +51,13 @@ public class InfiniteTerrain : MonoBehaviour
     void UpdateVisibleChunks()
     {
         // set everything to invisible
-        VisibleChunks.ForEach(chunk => chunk.SetVisible(false));
-        VisibleChunks.Clear();
+        // VisibleChunks.ForEach(chunk => chunk.SetVisible(false));
+        var vischunks = new List<Vector2>();
 
         int x = Mathf.RoundToInt(ViewerPosition.x / Scale);
         int y = Mathf.RoundToInt(ViewerPosition.y / Scale);
+
+
 
         // check if chunks are visible
         for (int yOffset = -_numberOfChunksVisible; yOffset <= _numberOfChunksVisible; yOffset++)
@@ -72,10 +74,13 @@ public class InfiniteTerrain : MonoBehaviour
                 {
                     _chunks.Add(chunk, new TerrainChunk(_generator, chunk, Scale, transform, MapMaterial));
                 }
+
+                vischunks.Add(chunk);
             }
         }
+        _chunks.Where(chunk => !vischunks.Contains(chunk.Key)).ToList().ForEach(x => Destroy(x.Value.MeshObject));
 
         // remove chunks that are invisible since this update
-        _chunks = _chunks.Where(chunk => chunk.Value.IsVisible()).ToDictionary(kv => kv.Key, kv => kv.Value);
+        _chunks = _chunks.Where(chunk => vischunks.Contains(chunk.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 }
