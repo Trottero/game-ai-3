@@ -25,12 +25,10 @@ public class Particle : MonoBehaviour
     public float TargetRange = 5f;
     public GameObject Target;
 
-
     [Header("Environment evasion")]
     public float EvasionFactor = 0.25f;
     public float EvasionRange = 5f;
     public int EvasionRaySamples = 100;
-    public static MeshCollider EnvironmentCollider;
 
     // Private variables
     public static GameObject[] neighbours;
@@ -54,11 +52,12 @@ public class Particle : MonoBehaviour
     {
         // Should update
         float viewerToFish = Vector2.Distance(new Vector3(transform.position.x, transform.position.z), InfiniteTerrain.ViewerPosition);
-        // if (viewerToFish > UpdateRange)
-        // {
-        //     // Skip update
-        //     return;
-        // }
+
+        if (viewerToFish > UpdateRange)
+        {
+            // Skip update
+            return;
+        }
 
         // Get vector for target.
         var targetvec = computeTarget();
@@ -231,9 +230,6 @@ public class Particle : MonoBehaviour
         var n_collisions = 0;
         var minDistance = EvasionRange;
 
-        var pos3d = transform.position / InfiniteTerrain.Scale;
-        var collider = InfiniteTerrain.Chunks[new Vector2((int)pos3d.x, (int)pos3d.z)].MeshCollider;
-
         // Calculate the sum of the distances between the particle and the collider
         for (int i = 0; i < EvasionRaySamples; i++)
         {
@@ -275,7 +271,7 @@ public class Particle : MonoBehaviour
         resultvec /= (float)n_collisions;
 
         // Calculate the inverse vector, just like in seperation.
-        resultvec = resultvec * -1;
+        resultvec *= -1;
 
         // Adjust the speed of the fish to avoid collision
         variableSpeed = RecalculateSpeed(minDistance, resultvec);
