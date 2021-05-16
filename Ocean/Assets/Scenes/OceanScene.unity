@@ -15,9 +15,9 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 0
-  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  m_FogMode: 3
-  m_FogDensity: 0.01
+  m_FogColor: {r: 0.015686275, g: 0, b: 0.5647059, a: 1}
+  m_FogMode: 2
+  m_FogDensity: 0.06
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
   m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
@@ -276,8 +276,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 6310418853442283107, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
+    - target: {fileID: 6310418853442283107, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
 --- !u!1 &1671710491
 GameObject:
@@ -290,6 +293,7 @@ GameObject:
   - component: {fileID: 1671710493}
   - component: {fileID: 1671710492}
   - component: {fileID: 1671710494}
+  - component: {fileID: 1671710495}
   m_Layer: 0
   m_Name: TerrainGenerator
   m_TagString: Untagged
@@ -341,7 +345,7 @@ MonoBehaviour:
   numberOfVoxels: 16
   HorizontalRenderDistance: 3
   VerticalRenderDistance: 3
-  seed: 0
+  Seed: 0
   HorizontalWeight: 1
   VerticalWeight: 1
   HorizontalVariance1: 4
@@ -370,3 +374,17 @@ MonoBehaviour:
   SeabedDensity: 0.2
   UndergroundVariance: 0.005
   UndergroundDensity: 0
+--- !u!114 &1671710495
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1671710491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18d4bf6d153f80458fb6db304ad1f68, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Prefab: {fileID: 898717672259396563, guid: 5d6d7512b6a53a04f8ecd0a90dca1cb7, type: 3}
+  Collider: {fileID: 0}

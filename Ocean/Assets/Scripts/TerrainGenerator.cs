@@ -12,7 +12,7 @@ public class TerrainGenerator : MonoBehaviour
     public int numberOfVoxels = 16;
     public int HorizontalRenderDistance = 3;
     public int VerticalRenderDistance = 3;
-    public int seed;
+    public int Seed;
 
     [Header("Noise weights")]
     public float HorizontalWeight = 1f;
@@ -122,7 +122,6 @@ public class TerrainGenerator : MonoBehaviour
 
         }
 
-        // TODO: generate epic marching cubes
         var meshData = new MeshData(numberOfVoxels, VerticalRenderDistance);
 
         generateVerticalChunk(pos, meshData);
@@ -161,6 +160,8 @@ public class TerrainGenerator : MonoBehaviour
             }
         }
 
+        var counter = 0;
+
         // Generate one block at a time, 1 unit consists of 32 voxels.
         for (int x = 0; x < numberOfVoxels; x++)
         {
@@ -177,6 +178,20 @@ public class TerrainGenerator : MonoBehaviour
                         var offset = VertexOffsets[v];
                         cubeCase += to_binary(voxel_densities[x + offset.x, y + offset.y, z + offset.z]) * exponent;
                         exponent *= 2;
+                    }
+
+                    if (cubeCase == 0) // Empty case
+                    {
+                        if (counter < 1)
+                        {
+                            var pos = new Vector3((float)x / numberOfVoxels, (float)y / numberOfVoxels, (float)z / numberOfVoxels);
+                            pos += chunk;
+                            pos *= Scale;
+                            pos.x -= chunk.x;
+                            pos.z -= chunk.z;
+                            FishGenerator.queueFishCreation(pos);
+                            counter++;
+                        }
                     }
 
                     // Get number of polys given the current case

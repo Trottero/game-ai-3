@@ -10,7 +10,7 @@ public class InfiniteTerrain : MonoBehaviour
     private const float SquaredViewerMoveThresholdForChunkUpdate =
         ViewerMoveThresholdForChunkUpdate * ViewerMoveThresholdForChunkUpdate;
 
-    public static float MaxViewingDistance = 100f;
+    public static float MaxViewingDistance = 150f;
     public static float Scale = 32.0f;
     public static Vector2 ViewerPosition;
 
@@ -21,8 +21,9 @@ public class InfiniteTerrain : MonoBehaviour
     private TerrainGenerator _generator;
 
     private Vector2 _previousViewerPosition;
+    public static MeshCollider MeshCollider;
 
-    private Dictionary<Vector2, TerrainChunk> _chunks = new Dictionary<Vector2, TerrainChunk>();
+    public static Dictionary<Vector2, TerrainChunk> Chunks = new Dictionary<Vector2, TerrainChunk>();
     public static List<TerrainChunk> VisibleChunks = new List<TerrainChunk>();
 
     void Start()
@@ -30,8 +31,12 @@ public class InfiniteTerrain : MonoBehaviour
         // MaxViewingDistance = detailLevels[detailLevels.Length - 1].visibleDistanceThreshold;
 
         _generator = FindObjectOfType<TerrainGenerator>();
-        // _chunkSize = TerrainGenerator.MapChunkSize - 1;
+
         _numberOfChunksVisible = Mathf.RoundToInt(MaxViewingDistance / Scale);
+        MeshCollider = gameObject.AddComponent<MeshCollider>();
+        MeshCollider.sharedMesh = new Mesh();
+        MeshCollider.sharedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
 
         UpdateVisibleChunks();
     }
@@ -41,7 +46,7 @@ public class InfiniteTerrain : MonoBehaviour
         var position = Viewer.position;
         ViewerPosition = new Vector2(position.x, position.z);
 
-        // if ((_previousViewerPosition - ViewerPosition).sqrMagnitude > SquaredViewerMoveThresholdForChunkUpdate)
+        if ((_previousViewerPosition - ViewerPosition).sqrMagnitude > SquaredViewerMoveThresholdForChunkUpdate)
         {
             _previousViewerPosition = ViewerPosition;
             UpdateVisibleChunks();
@@ -57,8 +62,6 @@ public class InfiniteTerrain : MonoBehaviour
         int x = Mathf.RoundToInt(ViewerPosition.x / Scale);
         int y = Mathf.RoundToInt(ViewerPosition.y / Scale);
 
-
-
         // check if chunks are visible
         for (int yOffset = -_numberOfChunksVisible; yOffset <= _numberOfChunksVisible; yOffset++)
         {
@@ -66,21 +69,21 @@ public class InfiniteTerrain : MonoBehaviour
             {
                 Vector2 chunk = new Vector2(x + xOffset, y + yOffset);
 
-                if (_chunks.ContainsKey(chunk))
+                if (Chunks.ContainsKey(chunk))
                 {
-                    _chunks[chunk].Update();
+                    Chunks[chunk].Update();
                 }
                 else
                 {
-                    _chunks.Add(chunk, new TerrainChunk(_generator, chunk, Scale, transform, MapMaterial));
+                    Chunks.Add(chunk, new TerrainChunk(_generator, chunk, Scale, transform, MapMaterial));
                 }
 
                 vischunks.Add(chunk);
             }
         }
-        _chunks.Where(chunk => !vischunks.Contains(chunk.Key)).ToList().ForEach(x => Destroy(x.Value.MeshObject));
+        Chunks.Where(chunk => !vischunks.Contains(chunk.Key)).ToList().ForEach(x => Destroy(x.Value.MeshObject));
 
         // remove chunks that are invisible since this update
-        _chunks = _chunks.Where(chunk => vischunks.Contains(chunk.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+        Chunks = Chunks.Where(chunk => vischunks.Contains(chunk.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 }

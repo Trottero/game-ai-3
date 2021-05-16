@@ -7,12 +7,13 @@ public class TerrainChunk
 {
     public Vector2 Position { get; private set; }
     public GameObject MeshObject { get; private set; }
+    public MeshCollider MeshCollider;
+
     private Bounds _bounds;
     private TerrainGenerator _generator;
 
     private MeshRenderer _meshRenderer;
     private MeshFilter _meshFilter;
-    private MeshCollider _meshCollider;
 
     private Mesh _mesh;
     private MeshData _meshData;
@@ -29,7 +30,7 @@ public class TerrainChunk
         MeshObject = new GameObject($"Terrain Chunk ({coord.x}, {coord.y})");
         _meshRenderer = MeshObject.AddComponent<MeshRenderer>();
         _meshFilter = MeshObject.AddComponent<MeshFilter>();
-        _meshCollider = MeshObject.AddComponent<MeshCollider>();
+        MeshCollider = MeshObject.AddComponent<MeshCollider>();
         _meshRenderer.material = material;
 
         MeshObject.transform.position = position3d;
@@ -45,7 +46,7 @@ public class TerrainChunk
 
         var mesh = meshData.CreateMesh();
         _meshFilter.mesh = mesh;
-        _meshCollider.sharedMesh = mesh;
+        MeshCollider.sharedMesh = mesh;
 
         Update();
     }
