@@ -241,7 +241,7 @@ public class Particle : MonoBehaviour
             // Cast ray from fish to point and check if it intersects with an object.
             var ray = new Ray(transform.position, spherePoints[i]);
 
-            if (collider.Raycast(ray, out var hitinfo, EvasionRange))
+            if (Physics.Raycast(ray, out var hitinfo, EvasionRange))
             {
                 // Check if this sphere is in this angle
                 if (ShowDebugGizmos)
