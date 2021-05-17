@@ -16,6 +16,7 @@ public class InfiniteTerrain : MonoBehaviour
 
     public Transform Viewer;
     public Material MapMaterial;
+    public GameObject WaterPrefab;
 
     private int _numberOfChunksVisible;
     private TerrainGenerator _generator;
@@ -36,7 +37,7 @@ public class InfiniteTerrain : MonoBehaviour
         MeshCollider = gameObject.AddComponent<MeshCollider>();
         MeshCollider.sharedMesh = new Mesh();
         MeshCollider.sharedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-
+        TerrainChunk.WaterPrefab = WaterPrefab;
 
         UpdateVisibleChunks();
     }
@@ -81,7 +82,7 @@ public class InfiniteTerrain : MonoBehaviour
                 vischunks.Add(chunk);
             }
         }
-        Chunks.Where(chunk => !vischunks.Contains(chunk.Key)).ToList().ForEach(x => Destroy(x.Value.MeshObject));
+        Chunks.Where(chunk => !vischunks.Contains(chunk.Key)).ToList().ForEach(x => x.Value.Destroy());
 
         // remove chunks that are invisible since this update
         Chunks = Chunks.Where(chunk => vischunks.Contains(chunk.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
