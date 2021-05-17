@@ -94,6 +94,6 @@ public class ThirdPersonCharacterController : MonoBehaviour
             transform.rotation = Quaternion.Euler(rotation.x, rotation.y, 0);
         }
 
-        transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, Int32.MinValue, yLimit),  transform.position.z);
+        transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, Int32.MinValue, yLimit), transform.position.z);
     }
 }
