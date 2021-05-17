@@ -99,7 +99,8 @@ MonoBehaviour:
   Speed: 5
   TurningSpeed: 2.5
   ShowDebugGizmos: 0
-  UpdateRange: 50
+  UpdateRange: 80
+  UpdateInterval: 3
   CohesionFactor: 1
   CohesionRange: 10
   SeperationFactor: 5
@@ -113,6 +114,8 @@ MonoBehaviour:
   EvasionFactor: 100
   EvasionRange: 5
   EvasionRaySamples: 50
+  MaxWaterHeight: 80
+  WaterHeightFactor: 100
 --- !u!1 &1062730951659385967
 GameObject:
   m_ObjectHideFlags: 0

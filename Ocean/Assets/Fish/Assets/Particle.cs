@@ -10,6 +10,7 @@ public class Particle : MonoBehaviour
     public float TurningSpeed = 2.5f;
     public bool ShowDebugGizmos = false;
     public float UpdateRange = 50f;
+    public int UpdateInterval = 3;
 
     [Header("Swarm Parameters")]
     public float CohesionFactor = 0.25f;
@@ -30,10 +31,15 @@ public class Particle : MonoBehaviour
     public float EvasionRange = 5f;
     public int EvasionRaySamples = 100;
 
+    public float MaxWaterHeight = 86f;
+    public float WaterHeightFactor = 100f;
+
     // Private variables
     public static GameObject[] neighbours;
     private Vector3[] spherePoints;
     private float variableSpeed;
+    private bool AnimationsActive = true;
+    private Vector3 optimal_vector;
 
     // Start is called before the first frame update
     void Start()
@@ -45,6 +51,8 @@ public class Particle : MonoBehaviour
         neighbours = GameObject.FindGameObjectsWithTag("ParticleGameObject")
             .Where(x => x.name != name)
             .ToArray();
+
+        optimal_vector = transform.forward;
     }
 
     // Update is called once per frame
@@ -55,27 +63,51 @@ public class Particle : MonoBehaviour
 
         if (viewerToFish > UpdateRange)
         {
+            if (AnimationsActive)
+            {
+                GetComponentInChildren<Animator>().enabled = false;
+                AnimationsActive = false;
+            }
             // Skip update
             return;
         }
 
-        // Get vector for target.
-        var targetvec = computeTarget();
+        if (!AnimationsActive)
+        {
+            AnimationsActive = true;
+            GetComponentInChildren<Animator>().enabled = true;
+        }
 
-        // Evade objects
-        var evasion = computeEvasion();
+        // Only update once every x frames
+        if (Time.frameCount % UpdateInterval == 0)
+        {
+            // Get vector for target.
+            var targetvec = computeTarget();
 
-        // Change our rotation so we avoid other particles
-        var separation = computeSeperation();
+            // Evade objects
+            var evasion = computeEvasion();
 
-        // Prefer to move to the center of our neighbouring particles
-        var cohesion = computeCohesion();
+            // Prevent from going out of the water
+            var waterHeight = computeWaterHeight();
 
-        // Align with other particles
-        var alignment = computeAlignment();
+            // Change our rotation so we avoid other particles
+            var separation = computeSeperation();
 
-        // Calculate the shit
-        var optimal_vector = (SeperationFactor * separation + CohesionFactor * cohesion + TargetFactor * targetvec + AlignmentFactor * alignment + EvasionFactor * evasion).normalized;
+            // Prefer to move to the center of our neighbouring particles
+            var cohesion = computeCohesion();
+
+            // Align with other particles
+            var alignment = computeAlignment();
+
+            // Calculate the shit
+            optimal_vector = (SeperationFactor * separation +
+                CohesionFactor * cohesion +
+                TargetFactor * targetvec +
+                AlignmentFactor * alignment +
+                EvasionFactor * evasion +
+                WaterHeightFactor * waterHeight)
+                .normalized;
+        }
 
         // Finally rotate the fish
         rotateFish(optimal_vector);
@@ -126,6 +158,15 @@ public class Particle : MonoBehaviour
     {
         // Move ourselves forward in current direction.
         transform.localPosition += variableSpeed * transform.forward * Time.deltaTime;
+    }
+
+    private Vector3 computeWaterHeight()
+    {
+        if (transform.position.y > MaxWaterHeight)
+        {
+            return Vector3.down;
+        }
+        return Vector3.zero;
     }
 
     private Vector3 computeTarget()

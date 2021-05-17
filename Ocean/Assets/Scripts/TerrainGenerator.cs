@@ -13,6 +13,7 @@ public class TerrainGenerator : MonoBehaviour
     public int HorizontalRenderDistance = 3;
     public int VerticalRenderDistance = 3;
     public int Seed;
+    public int MaxFishPerChunk = 3;
 
     [Header("Noise weights")]
     public float HorizontalWeight = 1f;
@@ -160,7 +161,7 @@ public class TerrainGenerator : MonoBehaviour
             }
         }
 
-        var counter = 0;
+        var fishCounter = 0;
 
         // Generate one block at a time, 1 unit consists of 32 voxels.
         for (int x = 0; x < numberOfVoxels; x++)
@@ -182,7 +183,7 @@ public class TerrainGenerator : MonoBehaviour
 
                     if (cubeCase == 0) // Empty case
                     {
-                        if (counter < 1)
+                        if (fishCounter < MaxFishPerChunk)
                         {
                             var pos = new Vector3((float)x / numberOfVoxels, (float)y / numberOfVoxels, (float)z / numberOfVoxels);
                             pos += chunk;
@@ -190,7 +191,7 @@ public class TerrainGenerator : MonoBehaviour
                             pos.x -= chunk.x;
                             pos.z -= chunk.z;
                             FishGenerator.queueFishCreation(pos);
-                            counter++;
+                            fishCounter++;
                         }
                     }
 
