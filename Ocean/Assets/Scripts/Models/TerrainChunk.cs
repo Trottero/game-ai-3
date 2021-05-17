@@ -38,9 +38,17 @@ public class TerrainChunk
         _meshObject.transform.position = position3d;
         _meshObject.transform.parent = parent;
 
-        _water = GameObject.Instantiate(WaterPrefab, position3d, Quaternion.Euler(0, 0, 0));
-        _water.name = $"Water ({coord.x}, {coord.y})";
-        _water.transform.parent = parent;
+        if (coord.x % 4 == 0 && coord.y % 4 == 0)
+        {
+            _water = GameObject.Instantiate(WaterPrefab, position3d, Quaternion.Euler(0, 0, 0));
+            _water.name = $"Water ({coord.x}, {coord.y})";
+            _water.transform.parent = parent;
+            var pos = _water.transform.position;
+            pos.y = 86.5f;
+            pos.x = coord.x * scale;
+            pos.z = coord.y * scale;
+            _water.transform.position = pos;
+        }
 
         _generator.RequestMeshData(Position, OnMeshReceived);
     }

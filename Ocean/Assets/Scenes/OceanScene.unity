@@ -282,19 +282,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6310418853442283108, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
       propertyPath: m_ClearFlags
-      value: 2
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6310418853442283108, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
+      propertyPath: m_BackGroundColor.a
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6310418853442283108, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
       propertyPath: m_BackGroundColor.b
-      value: 0.5647059
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6310418853442283108, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
       propertyPath: m_BackGroundColor.g
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6310418853442283108, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
       propertyPath: m_BackGroundColor.r
-      value: 0.015686275
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e3c1c66d179cd7b44a1ef38327ab782e, type: 3}
@@ -330,8 +334,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Viewer: {fileID: 269777897}
-  MapMaterial: {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
-  WaterPrefab: {fileID: -927199367670048503, guid: 3b698fd586e93274e99fec96cb6836b4, type: 3}
+  MapMaterial: {fileID: 2100000, guid: d224b6a658823fe48a14710ad3f3aeff, type: 2}
+  WaterPrefab: {fileID: 6795984684019847413, guid: 99863eda43170cb429f99edbe51f0847, type: 3}
 --- !u!4 &1671710493
 Transform:
   m_ObjectHideFlags: 0
