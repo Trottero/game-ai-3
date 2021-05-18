@@ -100,7 +100,8 @@ public class Particle : MonoBehaviour
             var alignment = computeAlignment();
 
             // Calculate the shit
-            optimal_vector = (SeperationFactor * separation +
+            optimal_vector = (
+                SeperationFactor * separation +
                 CohesionFactor * cohesion +
                 TargetFactor * targetvec +
                 AlignmentFactor * alignment +
@@ -112,8 +113,11 @@ public class Particle : MonoBehaviour
         // Finally rotate the fish
         rotateFish(optimal_vector);
 
-        // Debug ray shows the updated rotation
-        Debug.DrawRay(transform.position, transform.forward * 2, Color.red, 0.0f);
+        if (ShowDebugGizmos)
+        {
+            // Debug ray shows the updated rotation
+            Debug.DrawRay(transform.position, transform.forward * 2, Color.red, 0.0f);
+        }
 
         // Finally move forward with our current rotation
         moveForward();
@@ -143,15 +147,15 @@ public class Particle : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        // if (ShowDebugGizmos)
-        // {
-        //     // Draw a line to all of its neighbours
-        //     // foreach (var item in neighbours)
-        //     // {
-        //     //     Debug.DrawLine(transform.position, item.transform.position, Color.green, 0.0F);
-        //     // }
-        //     Gizmos.DrawWireSphere(transform.position, new float[] { CohesionRange, SeperationRange, AlignmentRange, EvasionRange }.Max());
-        // }
+        if (ShowDebugGizmos)
+        {
+            // Draw a line to all of its neighbours
+            // foreach (var item in neighbours)
+            // {
+            //     Debug.DrawLine(transform.position, item.transform.position, Color.green, 0.0F);
+            // }
+            Gizmos.DrawWireSphere(transform.position, new float[] { EvasionRange }.Max());
+        }
     }
 
     private void moveForward()
