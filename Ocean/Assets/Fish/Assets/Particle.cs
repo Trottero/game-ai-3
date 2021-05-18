@@ -11,6 +11,7 @@ public class Particle : MonoBehaviour
     public bool ShowDebugGizmos = false;
     public float UpdateRange = 50f;
     public int UpdateInterval = 3;
+    public float PerceptionAngle = 170f;
 
     [Header("Swarm Parameters")]
     public float CohesionFactor = 0.25f;
@@ -194,7 +195,7 @@ public class Particle : MonoBehaviour
 
     private bool neighbourInRange(Transform neighbour, float seperationRange)
     {
-        return Vector3.Distance(transform.position, neighbour.position) < seperationRange;
+        return Vector3.Distance(transform.position, neighbour.position) < seperationRange && Vector3.Angle(transform.forward, neighbour.position - transform.position) < PerceptionAngle;
     }
 
     private Vector3 computeSeperation()
