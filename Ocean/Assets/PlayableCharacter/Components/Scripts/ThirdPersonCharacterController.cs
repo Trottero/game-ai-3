@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,6 +11,7 @@ public class ThirdPersonCharacterController : MonoBehaviour
     public Transform playerCameraParent;
     public float lookSpeed = 2.0f;
     public float lookXLimit = 60.0f;
+    public float yLimit = 86f;
 
     public float movingAnimationSpeed = 1.0f;
     public float boostAnimationMultiplier = 1.5f;
@@ -91,5 +93,7 @@ public class ThirdPersonCharacterController : MonoBehaviour
             playerCameraParent.localRotation = Quaternion.Euler(0, 0, 0);
             transform.rotation = Quaternion.Euler(rotation.x, rotation.y, 0);
         }
+
+        transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, Int32.MinValue, yLimit), transform.position.z);
     }
 }
